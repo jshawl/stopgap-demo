@@ -16,7 +16,7 @@
     </form>
     <ul class='todos'></ul>
     <script>
-      var apiUrl = 'https://stopgap.store/48277/todos'
+      var apiUrl = getApiUrl() // or hardcode from 'https://stopgap.store/'
       var form = document.querySelector('form')
       var input = document.getElementById('todo')
       var todos = document.querySelector('.todos')
@@ -74,6 +74,29 @@
 	  todos.forEach(li)
 	})
       })
+      function getApiUrl(){
+        var data = JSON.parse(localStorage.getItem("stopgap-demo-url"))
+	var api = 'https://stopgap.store/'
+	if(data){
+	  var diff = Math.floor(Date.now() / 1000) - data.expires
+	  if(data.url && diff < 80000){
+	    return data.url
+	  }
+	}
+	fetch(api,{
+	  method: "POST"
+	}).then(function(response){
+	  response.json().then(function(project){
+	    var url = api
+	    var data = {
+	      url: url + project.sha + '/todos',
+	      expires: Math.floor(Date.now() / 1000)
+	    }
+	    localStorage.setItem("stopgap-demo-url", JSON.stringify(data))
+	    window.location.reload()
+	  })
+	})
+      }
     </script>
   </body>
 </html>
