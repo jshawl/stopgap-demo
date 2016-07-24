@@ -1,78 +1,79 @@
 <!doctype html>
 <html>
-<head>
-  <style>
-    span + a{
-      display:inline-block;
-      margin-left:.5em;
-    }
-  </style>
-</head>
-<body ng-app='stopgap'>
-  <div ng-controller='main as vm'>
+  <head>
+    <style>
+      span + a {
+	display: inline-block;
+	margin-left: 1em;
+	cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
     <form>
-      <input type='text'>
+      <label for='todo'>Todo:</label>
+      <input type='text' id='todo'>
     </form>
-    <ul class='js-todos'>
-    </ul>
-  </div>
-  <script>
-  var url = 'https://stopgap.store/8bb3e/todos.json'
-  var ul = document.querySelector('.js-todos')
-  var form = document.querySelector('form')
-  var input = document.querySelector('input')
-  form.addEventListener("submit", create)
-  document.body.addEventListener("click", remove)
-  function remove(event){
-   if(event.target.classList.contains("js-delete")){
-     event.preventDefault()
-     fetch(event.target.href,{
-       method: 'DELETE'
-     }).then(function(){
-       ul.removeChild(event.target.parentNode)
-     })
-   }
-  }
-  function create(event){
-    event.preventDefault()
-    fetch(url,{
-      method: 'POST',
-      body: JSON.stringify({
-        title: input.value
+    <ul class='todos'></ul>
+    <script>
+      var apiUrl = 'https://stopgap.store/48277/todos'
+      var form = document.querySelector('form')
+      var input = document.getElementById('todo')
+      var todos = document.querySelector('.todos')
+      form.addEventListener("submit", create)
+      function create(event){
+	event.preventDefault()
+	fetch(apiUrl,{
+	  method: 'POST',
+	  body: JSON.stringify({
+	    text: input.value
+	  })
+	}).then(function(response){
+	  response.json().then(li)
+	})
+      }
+      function update(event){
+	var id = event.target.getAttribute("data-id")
+	fetch(apiUrl + "/" + id + ".json", {
+	  method: 'PATCH',
+	  body: JSON.stringify({
+	   text: event.target.innerText
+	  })
+	}).then(function(response){
+	  response.json().then(function(todo){
+	    console.log(todo)
+	  })
+	})
+      }
+      function li(todo){
+	var l = document.createElement("li")
+	var span = document.createElement("span")
+	span.setAttribute("contenteditable", true)
+	span.setAttribute("data-id", todo.id)
+	span.innerHTML = todo.text
+	span.addEventListener("blur", update)
+	l.appendChild(span)
+	var a = document.createElement("a")
+	a.innerHTML = '&times;'
+	a.addEventListener("click", remove)
+	a.setAttribute("data-id", todo.id)
+	l.appendChild(a)
+	todos.appendChild(l)
+      }
+      function remove(event){
+	event.preventDefault()
+	var id = event.target.getAttribute("data-id")
+	fetch(apiUrl + "/" + id,{
+	  method: 'DELETE'
+	}).then(function(){
+	  todos.removeChild(event.target.parentNode)
+	})
+      }
+      fetch(apiUrl + ".json").then(function(response){
+	response.json().then(function(todos){
+	  todos.forEach(li)
+	})
       })
-    }).then(function(response){
-      input.value = ''
-      response.json().then(li)
-    })
-  }
-  function update(event){
-    fetch(event.target.getAttribute('url'),{
-      method: "PATCH",
-      body: JSON.stringify({
-	title: event.target.innerText
-      })
-    })
-  }
-  fetch(url).then(function(todos){
-    todos.json().then(function(ts){
-      ts.forEach(li)
-    })
-  })
-  function li(todo){
-    var li = document.createElement("li")
-    var a = document.createElement("a")
-    var span = document.createElement("span")
-    span.innerHTML = todo.title
-    a.className = 'js-delete'
-    a.innerHTML = "&times;"
-    a.href = todo.url
-    span.setAttribute('contenteditable','true')
-    span.setAttribute('url',todo.url)
-    li.appendChild(span)
-    li.appendChild(a)
-    span.addEventListener("blur", update)
-    ul.appendChild(li)
-  }
-  </script>
-</body>
+    </script>
+  </body>
 </html>
